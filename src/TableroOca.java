@@ -7,38 +7,45 @@ import java.util.List;
 import java.util.Random;
 
 public class TableroOca extends JFrame {
+
     private JPanel tableroPanel;
     private JButton dadoButton;
     private JButton mostrarJugadoresButton;
-    private int numeroDados = 1; // Por defecto, inicia con un dado
-    private List<Jugador> jugadores; // Lista para almacenar los jugadores
+    private JLabel turnoLabel;
+    private int numeroDados = 1;
+    private List<Jugador> jugadores;
+    private int turnoActual = 0;
+    private boolean turnoDadoLanzado = false;
 
     public TableroOca() {
-        // Configuración del marco
         setTitle("Tablero de la Oca");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 600);
+        setSize(800, 800);
 
-        // Configuración del panel del tablero
+        solicitarInfoJugadores();
+
         tableroPanel = new JPanel();
-        tableroPanel.setLayout(new GridLayout(8, 8));
+        tableroPanel.setLayout(new GridLayout(9, 9));
 
-        // Crear casillas del tablero
-        for (int i = 1; i <= 64; i++) {
+        for (int i = 1; i <= 63; i++) {
             JButton casilla = new JButton(Integer.toString(i));
+            casilla.setName("Casilla" + i);
             casilla.setPreferredSize(new Dimension(75, 75));
             casilla.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // Aquí puedes manejar la lógica cuando se hace clic en una casilla
-                    JOptionPane.showMessageDialog(null, "Haz clic en la casilla: " + casilla.getText());
+                    // Verificar si los dados se han lanzado antes de cambiar el turno y procesar la casilla
+                    if (turnoDadoLanzado) {
+                        procesarCasilla((JButton) e.getSource()); // Pasar el botón como argumento
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Primero debes lanzar los dados.");
+                    }
                 }
             });
             tableroPanel.add(casilla);
         }
 
-        // Botón para lanzar el dado
-        dadoButton = new JButton("Dado");
+        dadoButton = new JButton("Lanzar Dado(s)");
         dadoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -46,7 +53,6 @@ public class TableroOca extends JFrame {
             }
         });
 
-        // Botón para mostrar la lista de jugadores
         mostrarJugadoresButton = new JButton("Mostrar Jugadores");
         mostrarJugadoresButton.addActionListener(new ActionListener() {
             @Override
@@ -55,88 +61,101 @@ public class TableroOca extends JFrame {
             }
         });
 
-        // Panel para los botones dado y mostrar jugadores
-        JPanel buttonsPanel = new JPanel();
-        buttonsPanel.add(dadoButton);
-        buttonsPanel.add(mostrarJugadoresButton);
+        turnoLabel = new JLabel("Turno del Jugador: " + jugadores.get(turnoActual).getNombre());
 
-        // Agregar componentes al marco
+        JPanel dadoPanel = new JPanel();
+        dadoPanel.add(new JLabel("Número de dados:"));
+        JRadioButton dadoUnico = new JRadioButton("1");
+        JRadioButton dosDados = new JRadioButton("2");
+        ButtonGroup group = new ButtonGroup();
+        group.add(dadoUnico);
+        group.add(dosDados);
+        dadoUnico.setSelected(true);
+
+        dadoUnico.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                numeroDados = 1;
+            }
+        });
+
+        dosDados.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                numeroDados = 2;
+            }
+        });
+
+        dadoPanel.add(dadoUnico);
+        dadoPanel.add(dosDados);
+
         add(tableroPanel, BorderLayout.CENTER);
-        add(buttonsPanel, BorderLayout.SOUTH);
+        add(dadoPanel, BorderLayout.SOUTH);
+        add(dadoButton, BorderLayout.NORTH);
+        add(mostrarJugadoresButton, BorderLayout.EAST);
+        add(turnoLabel, BorderLayout.WEST);
 
-        // Hacer visible el marco
         setVisible(true);
+    }
 
-        // Inicializar la lista de jugadores
+    private void solicitarInfoJugadores() {
         jugadores = new ArrayList<>();
+
+        int numJugadores = Integer.parseInt(JOptionPane.showInputDialog("Ingrese el número de jugadores (mínimo 2):"));
+
+        while (numJugadores < 2) {
+            JOptionPane.showMessageDialog(null, "Debe haber al menos 2 jugadores.");
+            numJugadores = Integer.parseInt(JOptionPane.showInputDialog("Ingrese el número de jugadores (mínimo 2):"));
+        }
+
+        for (int i = 0; i < numJugadores; i++) {
+            String nombre = JOptionPane.showInputDialog("Nombre del Jugador " + (i + 1) + ":");
+            int edad = Integer.parseInt(JOptionPane.showInputDialog("Edad del Jugador " + (i + 1) + ":"));
+            String colorFicha = JOptionPane.showInputDialog("Color de la ficha del Jugador " + (i + 1) + ":");
+
+            Jugador jugador = new Jugador(nombre, edad, colorFicha);
+            jugadores.add(jugador);
+        }
     }
 
     private void lanzarDado() {
         Random rand = new Random();
         int resultado = 0;
         for (int i = 0; i < numeroDados; i++) {
-            resultado += rand.nextInt(6) + 1; // Generar números aleatorios del 1 al 6
+            resultado += rand.nextInt(6) + 1;
         }
-        JOptionPane.showMessageDialog(null, "Resultado del dado: " + resultado);
+        JOptionPane.showMessageDialog(null, "Resultado del dado(s): " + resultado);
+
+        // Establecer la bandera de turnoDadoLanzado a true
+        turnoDadoLanzado = true;
     }
 
     private void mostrarJugadores() {
-        StringBuilder jugadoresInfo = new StringBuilder("Lista de Jugadores:\n");
+        StringBuilder mensaje = new StringBuilder("Lista de Jugadores:\n");
         for (Jugador jugador : jugadores) {
-            jugadoresInfo.append(jugador.toString()).append("\n");
+            mensaje.append(jugador.toString()).append("\n");
         }
-        JOptionPane.showMessageDialog(null, jugadoresInfo.toString());
+        JOptionPane.showMessageDialog(null, mensaje.toString());
+    }
+
+    private void procesarCasilla(JButton casilla) {
+        // Obtener el nombre del jugador actual y asociarlo con el botón
+        String nombreJugador = jugadores.get(turnoActual).getNombre();
+        casilla.setText(casilla.getText() + " - " + nombreJugador);
+
+        // Cambiar el turno al siguiente jugador y actualizar el JLabel
+        turnoActual = (turnoActual + 1) % jugadores.size();
+        actualizarTurnoLabel();
+
+        // Restablecer la bandera de turnoDadoLanzado a false después de procesar la casilla
+        turnoDadoLanzado = false;
+    }
+
+    private void actualizarTurnoLabel() {
+        turnoLabel.setText("Turno del Jugador: " + jugadores.get(turnoActual).getNombre());
     }
 
     public static void main(String[] args) {
-
-        int cantidadJugadores;
-
-        // Solicitar la cantidad de jugadores hasta que sea al menos 2
-        do {
-            cantidadJugadores = Integer.parseInt(JOptionPane.showInputDialog("Ingrese la cantidad de jugadores (mínimo 2):"));
-            if (cantidadJugadores < 2) {
-                JOptionPane.showMessageDialog(null, "Debe haber al menos 2 jugadores. Inténtelo nuevamente.");
-            }
-        } while (cantidadJugadores < 2);
-
-        // Crear una lista para almacenar los jugadores
-        List<Jugador> jugadores = new ArrayList<>();
-
-        // Solicitar los datos para cada jugador
-        for (int i = 1; i <= cantidadJugadores; i++) {
-            String nombre = JOptionPane.showInputDialog("Ingrese el nombre del jugador " + i + ":");
-
-            // Solicitar la edad y asegurarse de que esté entre 8 y 99 años
-            int edad;
-            do {
-                edad = Integer.parseInt(JOptionPane.showInputDialog("Ingrese la edad del jugador " + i + ":"));
-                if (edad < 8 || edad > 99) {
-                    JOptionPane.showMessageDialog(null, "La edad debe estar entre 8 y 99 años. Inténtelo nuevamente.");
-                }
-            } while (edad < 8 || edad > 99);
-
-            String colorFicha = JOptionPane.showInputDialog("Ingrese el color de ficha del jugador " + i + ":");
-
-            // Crear un nuevo jugador y agregarlo a la lista
-            Jugador jugador = new Jugador(nombre, edad, colorFicha);
-            jugadores.add(jugador);
-        }
-
-        // Imprimir la información de los jugadores
-        for (Jugador jugador : jugadores) {
-            System.out.println(jugador.toString());
-        }
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new TableroOca();
-            }
-        });
+        SwingUtilities.invokeLater(() -> new TableroOca());
     }
-
 }
-
-
-
-
