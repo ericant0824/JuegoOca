@@ -1,13 +1,13 @@
 public class Jugador {
     private String nombre;
     private int Puntaje;
-    private int cedula;
+    private int edad;
     private String colorFicha;
 
-    public Jugador(String nombre, int Puntaje, int cedula) {
+    public Jugador(String nombre, int edad, String colorFicha) {
         this.nombre = nombre;
-        this.Puntaje = Puntaje;
-        this.cedula = cedula;
+        this.edad = edad;
+        this.colorFicha = colorFicha;
     }
 
     public String getNombre() {
@@ -34,16 +34,16 @@ public class Jugador {
         this.Puntaje = colorFicha;
     }
 
-    public int getCedula() {
-        return cedula;
+    public int getEdad() {
+        return edad;
     }
 
-    public void setCedula(int cedula) {
-        this.cedula = cedula;
+    public void setEdad(int edad) {
+        this.edad = edad;
     }
 
     @Override
     public String toString() {
-        return "Jugador{" + "nombre=" + nombre + ", Puntaje=" + Puntaje + ", cedula=" + cedula + '}';
+        return "Jugador{" + "nombre=" + nombre + ", Puntaje=" + Puntaje + ", cedula=" + edad + '}';
     }
 }
